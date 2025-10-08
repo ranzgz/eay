@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini AI Assistant</title>
+    <title>AI Chat dengan Mode Kepribadian</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -28,6 +28,39 @@
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
+        /* Mode Tsundere */
+        .tsundere-mode {
+            --primary-color: #ff6b8b;
+            --message-ai-bg: #fff0f3;
+        }
+
+        .dark-mode.tsundere-mode {
+            --primary-color: #ff8fa3;
+            --message-ai-bg: #3a2a2f;
+        }
+
+        /* Mode Yandere */
+        .yandere-mode {
+            --primary-color: #dc3545;
+            --message-ai-bg: #ffe6e6;
+        }
+
+        .dark-mode.yandere-mode {
+            --primary-color: #e74c3c;
+            --message-ai-bg: #3a2424;
+        }
+
+        /* Mode Kuudere */
+        .kuudere-mode {
+            --primary-color: #3498db;
+            --message-ai-bg: #e6f7ff;
+        }
+
+        .dark-mode.kuudere-mode {
+            --primary-color: #5dade2;
+            --message-ai-bg: #243a3a;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -35,6 +68,499 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             transition: background-color 0.3s, color 0.3s;
         }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .logo i {
+            font-size: 1.5rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .theme-toggle, .mode-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .mode-toggle {
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        .mode-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 100;
+            width: 180px;
+        }
+
+        .mode-dropdown.active {
+            display: flex;
+        }
+
+        .mode-option {
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mode-option:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .mode-option.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1rem;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background-color: var(--message-ai-bg);
+            color: var(--text-color);
+            border-bottom-left-radius: 0;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--message-user-bg);
+            color: var(--message-user-text);
+            border-bottom-right-radius: 0;
+        }
+
+        .input-container {
+            padding: 1rem;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--secondary-color);
+            display: flex;
+            gap: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--secondary-color);
+            border-radius: 2rem;
+            outline: none;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        #send-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+        }
+
+        #send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background-color: var(--message-ai-bg);
+            padding: 0.8rem 1.2rem;
+            border-radius: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            float: left;
+            margin: 0 1px;
+            background-color: #9E9EA1;
+            display: block;
+            border-radius: 50%;
+            opacity: 0.4;
+        }
+
+        .typing-indicator span:nth-of-type(1) {
+            animation: typing 1s infinite;
+        }
+
+        .typing-indicator span:nth-of-type(2) {
+            animation: typing 1s 0.33s infinite;
+        }
+
+        .typing-indicator span:nth-of-type(3) {
+            animation: typing 1s 0.66s infinite;
+        }
+
+        @keyframes typing {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .mode-indicator {
+            align-self: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .message {
+                max-width: 90%;
+            }
+            
+            .mode-toggle span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-robot"></i>
+            <span>AI Chat dengan Mode Kepribadian</span>
+        </div>
+        <div class="header-controls">
+            <button class="mode-toggle" id="mode-toggle">
+                <i class="fas fa-user"></i>
+                <span>Mode: Normal</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+        <div class="mode-dropdown" id="mode-dropdown">
+            <div class="mode-option" data-mode="normal">
+                <i class="fas fa-user"></i>
+                <span>Normal</span>
+            </div>
+            <div class="mode-option" data-mode="tsundere">
+                <i class="fas fa-heart"></i>
+                <span>Tsundere</span>
+            </div>
+            <div class="mode-option" data-mode="yandere">
+                <i class="fas fa-skull"></i>
+                <span>Yandere</span>
+            </div>
+            <div class="mode-option" data-mode="kuudere">
+                <i class="fas fa-snowflake"></i>
+                <span>Kuudere</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="chat-container" id="chat-container">
+        <div class="mode-indicator" id="mode-indicator">
+            Mode: Normal
+        </div>
+        <div class="message ai-message">
+            Halo! Saya asisten AI Anda. Ada yang bisa saya bantu hari ini?
+        </div>
+        <div class="typing-indicator" id="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="user-input" placeholder="Ketik pesan Anda di sini...">
+        <button id="send-button">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+
+    <script>
+        // Konfigurasi
+        const API_KEY = 'AIzaSyBn-INIM5C9uCRa1WXWCeqm3MkYpn-iGRE'; // Ganti dengan API key Gemini Anda
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+        // Elemen DOM
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const themeToggle = document.getElementById('theme-toggle');
+        const modeToggle = document.getElementById('mode-toggle');
+        const modeDropdown = document.getElementById('mode-dropdown');
+        const modeIndicator = document.getElementById('mode-indicator');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const modeOptions = document.querySelectorAll('.mode-option');
+
+        // State aplikasi
+        let currentMode = 'normal';
+
+        // Mode gelap/terang
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        });
+
+        // Toggle dropdown mode
+        modeToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modeDropdown.classList.toggle('active');
+        });
+
+        // Tutup dropdown saat klik di luar
+        document.addEventListener('click', () => {
+            modeDropdown.classList.remove('active');
+        });
+
+        // Pilih mode
+        modeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const mode = option.dataset.mode;
+                setMode(mode);
+                modeDropdown.classList.remove('active');
+            });
+        });
+
+        // Fungsi untuk mengatur mode
+        function setMode(mode) {
+            // Hapus semua kelas mode sebelumnya
+            document.body.classList.remove('tsundere-mode', 'yandere-mode', 'kuudere-mode');
+            
+            // Tambahkan kelas mode baru
+            if (mode !== 'normal') {
+                document.body.classList.add(`${mode}-mode`);
+            }
+            
+            // Update state
+            currentMode = mode;
+            
+            // Update UI
+            const modeNames = {
+                normal: 'Normal',
+                tsundere: 'Tsundere',
+                yandere: 'Yandere',
+                kuudere: 'Kuudere'
+            };
+            
+            modeToggle.querySelector('span').textContent = `Mode: ${modeNames[mode]}`;
+            modeIndicator.textContent = `Mode: ${modeNames[mode]}`;
+            
+            // Update mode aktif di dropdown
+            modeOptions.forEach(opt => {
+                if (opt.dataset.mode === mode) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            
+            // Tambahkan pesan sistem tentang perubahan mode
+            addSystemMessage(`Mode diubah ke ${modeNames[mode]}`);
+        }
+
+        // Fungsi untuk menambahkan pesan sistem
+        function addSystemMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', 'ai-message');
+            messageElement.style.alignSelf = 'center';
+            messageElement.style.fontStyle = 'italic';
+            messageElement.style.opacity = '0.7';
+            messageElement.textContent = message;
+            chatContainer.insertBefore(messageElement, typingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Fungsi untuk menambahkan pesan ke chat
+        function addMessage(message, isUser) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.classList.add(isUser ? 'user-message' : 'ai-message');
+            messageElement.textContent = message;
+            chatContainer.insertBefore(messageElement, typingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Fungsi untuk menampilkan/menyembunyikan indikator mengetik
+        function showTypingIndicator(show) {
+            typingIndicator.style.display = show ? 'flex' : 'none';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Fungsi untuk memproses prompt berdasarkan mode
+        function processPrompt(prompt) {
+            let processedPrompt = prompt;
+            
+            switch(currentMode) {
+                case 'tsundere':
+                    processedPrompt = `Anda adalah karakter tsundere. Karakter tsundere awalnya bersikap dingin, kasar, atau bermusuhan tetapi sebenarnya peduli dan penuh kasih sayang di dalam hati. Balaslah pertanyaan ini dengan gaya tsundere: "${prompt}". Jangan terlalu manis, tunjukkan sedikit keengganan tetapi tetap membantu.`;
+                    break;
+                case 'yandere':
+                    processedPrompt = `Anda adalah karakter yandere. Karakter yandere awalnya penuh kasih sayang dan penyayang tetapi bisa menjadi obsesif, posesif, dan berbahaya. Balaslah pertanyaan ini dengan gaya yandere: "${prompt}". Tunjukkan kasih sayang yang berlebihan dengan sedikit ancaman halus atau kecemburuan.`;
+                    break;
+                case 'kuudere':
+                    processedPrompt = `Anda adalah karakter kuudere. Karakter kuudere bersikap tenang, dingin, dan terkendali di luar tetapi sebenarnya peduli di dalam. Balaslah pertanyaan ini dengan gaya kuudere: "${prompt}". Gunakan bahasa yang formal dan sedikit dingin, tetapi tetap membantu.`;
+                    break;
+                default:
+                    // Normal mode, tidak ada perubahan
+                    break;
+            }
+            
+            return processedPrompt;
+        }
+
+        // Fungsi untuk mendapatkan respons dari Gemini API
+        async function getGeminiResponse(prompt) {
+            showTypingIndicator(true);
+            
+            try {
+                const processedPrompt = processPrompt(prompt);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: processedPrompt
+                            }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                showTypingIndicator(false);
+                
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error('Respons tidak valid dari API');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showTypingIndicator(false);
+                return 'Maaf, terjadi kesalahan. Silakan coba lagi.';
+            }
+        }
+
+        // Fungsi untuk menangani pengiriman pesan
+        async function handleSendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Tambahkan pesan pengguna
+            addMessage(message, true);
+            userInput.value = '';
+            sendButton.disabled = true;
+
+            // Dapatkan dan tampilkan respons AI
+            const aiResponse = await getGeminiResponse(message);
+            addMessage(aiResponse, false);
+            
+            sendButton.disabled = false;
+            userInput.focus();
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', handleSendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage();
+            }
+        });
+
+        // Fokus pada input saat halaman dimuat
+        userInput.focus();
+    </script>
+</body>
+</html>        }
 
         body {
             background-color: var(--bg-color);
